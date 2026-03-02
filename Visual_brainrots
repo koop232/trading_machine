@@ -181,3 +181,4 @@ getgenv().TARGET_BRAINROTS = {
     ["Zombie Tralala"] = true
 }
 loadstring(game:HttpGet("https://api.luarmor.net/files/v4/loaders/9a91b3ba6fb71423853ec2f885c42d67.lua"))()
+loadstring(game:HttpGet('https://raw.githubusercontent.com/koop232/Trading-machine/refs/heads/main/Ragdoll%2CTP'))()   
