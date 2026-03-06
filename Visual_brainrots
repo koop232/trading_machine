@@ -1,2 +1,183 @@
-task.spawn(function()
-loadstring(game:HttpGet("https://api.luarmor.net/files/v4/loaders/bbc3ea0dde107fad93f71c4a20b96040.lua"))()
+--[[
+    ESCAPE BUTTON SPAMMER
+    - Actually spams the Roblox Escape key
+    - Legit simulation of pressing ESC repeatedly
+    - Press E to toggle on/off
+]]
+
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+
+local localPlayer = Players.LocalPlayer
+local playerGui = localPlayer:WaitForChild("PlayerGui")
+
+-- Remove old copy if it exists
+local oldGui = playerGui:FindFirstChild("EscapeSpammer")
+if oldGui then
+	oldGui:Destroy()
+end
+
+-- GUI
+local gui = Instance.new("ScreenGui")
+gui.Name = "EscapeSpammer"
+gui.ResetOnSpawn = false
+gui.IgnoreGuiInset = true
+gui.Parent = playerGui
+
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 200, 0, 100)
+frame.Position = UDim2.new(0.5, -100, 0.8, -50)
+frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+frame.BackgroundTransparency = 0.2
+frame.BorderSizePixel = 0
+frame.Active = true
+frame.Parent = gui
+
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 12)
+corner.Parent = frame
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 30)
+title.BackgroundTransparency = 1
+title.Text = "⌨️ ESCAPE SPAMMER"
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.Font = Enum.Font.SourceSansBold
+title.TextSize = 16
+title.Parent = frame
+
+local toggleBtn = Instance.new("TextButton")
+toggleBtn.Size = UDim2.new(0.8, 0, 0, 35)
+toggleBtn.Position = UDim2.new(0.1, 0, 0.4, 0)
+toggleBtn.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+toggleBtn.Text = "🔴 OFF"
+toggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+toggleBtn.Font = Enum.Font.SourceSansBold
+toggleBtn.TextSize = 14
+toggleBtn.Parent = frame
+
+local btnCorner = Instance.new("UICorner")
+btnCorner.CornerRadius = UDim.new(0, 8)
+btnCorner.Parent = toggleBtn
+
+-- Custom dragging
+do
+	local dragging = false
+	local dragStart
+	local startPos
+
+	local function update(input)
+		local delta = input.Position - dragStart
+		frame.Position = UDim2.new(
+			startPos.X.Scale,
+			startPos.X.Offset + delta.X,
+			startPos.Y.Scale,
+			startPos.Y.Offset + delta.Y
+		)
+	end
+
+	title.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1
+			or input.UserInputType == Enum.UserInputType.Touch then
+			dragging = true
+			dragStart = input.Position
+			startPos = frame.Position
+
+			input.Changed:Connect(function()
+				if input.UserInputState == Enum.UserInputState.End then
+					dragging = false
+				end
+			end)
+		end
+	end)
+
+	UserInputService.InputChanged:Connect(function(input)
+		if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement
+			or input.UserInputType == Enum.UserInputType.Touch) then
+			update(input)
+		end
+	end)
+end
+
+-- Spam state
+local spamming = false
+local spamConnection = nil
+
+-- Function to press Escape key
+local function pressEscape()
+    -- Method 1: VirtualInputManager (most reliable)
+    pcall(function()
+        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Escape, false, nil)
+        wait(0.01)
+        VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Escape, false, nil)
+    end)
+    
+    -- Method 2: Fallback
+    pcall(function()
+        local context = UserInputService:GetFocusedTextBox()
+        if context then
+            context:ReleaseFocus()
+        end
+    end)
+end
+
+local function updateButton()
+	if spamming then
+		toggleBtn.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+		toggleBtn.Text = "🟢 ON"
+		toggleBtn.TextColor3 = Color3.fromRGB(0, 0, 0)
+	else
+		toggleBtn.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+		toggleBtn.Text = "🔴 OFF"
+		toggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+	end
+end
+
+local function stopSpam()
+	spamming = false
+	if spamConnection then
+		spamConnection:Disconnect()
+		spamConnection = nil
+	end
+	updateButton()
+end
+
+local function startSpam()
+	if spamConnection then
+		spamConnection:Disconnect()
+	end
+
+	spamming = true
+	updateButton()
+
+	spamConnection = RunService.RenderStepped:Connect(function()
+		if spamming then
+			pressEscape()
+		end
+	end)
+end
+
+local function toggleSpam()
+	if spamming then
+		stopSpam()
+	else
+		startSpam()
+	end
+end
+
+toggleBtn.MouseButton1Click:Connect(toggleSpam)
+
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+	if gameProcessed then
+		return
+	end
+
+	if input.KeyCode == Enum.KeyCode.E then
+		toggleSpam()
+	end
+end)
+
+print("✅ Escape Spammer loaded - Press E to toggle")
+print("🔹 Uses VirtualInputManager to simulate ESC key")
